@@ -45,10 +45,17 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="ethereum" />
+            </intent-filter>
         </activity>
 
         <activity android:name="com.tokenbrowser.view.activity.MainActivity"
                   android:windowSoftInputMode="adjustPan|stateHidden" />
+
         <activity android:name="com.tokenbrowser.view.activity.ChatActivity"
                   android:parentActivityName="com.tokenbrowser.view.activity.MainActivity"
                   android:windowSoftInputMode="stateUnchanged">
@@ -81,6 +88,7 @@
                   android:theme="@style/SplashTheme" />
         <activity android:name="com.tokenbrowser.view.activity.QrCodeActivity"/>
         <activity android:name="com.tokenbrowser.view.activity.TransactionOverviewActivity" />
+        <activity android:name="com.tokenbrowser.view.activity.QrCodeHandlerActivity" />
 
         <meta-data
             android:name="io.fabric.ApiKey"

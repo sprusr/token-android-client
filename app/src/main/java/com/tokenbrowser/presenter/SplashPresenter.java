@@ -19,11 +19,13 @@ package com.tokenbrowser.presenter;
 
 import android.app.PendingIntent;
 import android.content.Intent;
+import android.net.Uri;
 
 import com.crashlytics.android.Crashlytics;
 import com.tokenbrowser.util.SharedPrefsUtil;
 import com.tokenbrowser.view.BaseApplication;
 import com.tokenbrowser.view.activity.MainActivity;
+import com.tokenbrowser.view.activity.QrCodeHandlerActivity;
 import com.tokenbrowser.view.activity.SignInActivity;
 import com.tokenbrowser.view.activity.SplashActivity;
 
@@ -87,8 +89,24 @@ public class SplashPresenter implements Presenter<SplashActivity> {
             }
             this.activity.finish();
         } else {
+            redirectByIntentData();
+        }
+    }
+
+    private void redirectByIntentData() {
+        final Uri uri = this.activity.getIntent().getData();
+        if (uri != null) {
+            goToQrCodeActivity(uri);
+        } else {
             goToMainActivity();
         }
+    }
+
+    private void goToQrCodeActivity(final Uri uri) {
+        final Intent intent = new Intent(this.activity, QrCodeHandlerActivity.class)
+                .setData(uri);
+        this.activity.getIntent().setData(null);
+        goToActivity(intent);
     }
 
     private void goToMainActivity() {
