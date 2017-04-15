@@ -40,13 +40,14 @@ import rx.android.schedulers.AndroidSchedulers;
 import rx.subscriptions.CompositeSubscription;
 
 public class MainPresenter implements Presenter<MainActivity> {
+
     private static final int DEFAULT_TAB = 0;
     private static final int SCAN_POSITION = 2;
 
     private MainActivity activity;
-    private boolean firstTimeAttached = true;
     private NavigationAdapter adapter;
     private CompositeSubscription subscriptions;
+    private boolean firstTimeAttached = true;
 
     private final AHBottomNavigation.OnTabSelectedListener tabListener = new AHBottomNavigation.OnTabSelectedListener() {
         @Override
