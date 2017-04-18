@@ -153,7 +153,21 @@ public class QrCodeHandlerPresenter implements
     }
 
     @Override
-    public void onExternalPaymentApproved(final Payment payment) {}
+    public void onExternalPaymentApproved(final Payment payment) {
+        try {
+            sendExternalPayment(payment);
+        } catch (InvalidQrCodePayment invalidQrCodePayment) {
+            handleInvalidQrCodePayment();
+        }
+    }
+
+    private void sendExternalPayment(final Payment payment) throws InvalidQrCodePayment {
+        BaseApplication
+                .get()
+                .getTokenManager()
+                .getTransactionManager()
+                .sendExternalPayment(payment.getToAddress(), payment.getValue());
+    }
 
     @Override
     public void onViewDetached() {
