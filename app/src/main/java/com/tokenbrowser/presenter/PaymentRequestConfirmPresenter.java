@@ -70,7 +70,7 @@ public class PaymentRequestConfirmPresenter implements Presenter<PaymentConfirma
         processBundleData();
 
         if (this.paymentAddress != null) {
-            setExternalUserInfo();
+            updateView(null);
         } else {
             getUserByTokenId();
         }
@@ -83,15 +83,15 @@ public class PaymentRequestConfirmPresenter implements Presenter<PaymentConfirma
 
     private void handleApprovedClicked(final View v) {
         final Payment payment = new Payment()
-                .setToAddress(this.paymentAddress)
                 .setValue(this.encodedEthAmount);
 
-        if (this.tokenId != null) {
-            this.view.getPaymentConfirmationListener()
-                    .onTokenPaymentApproved(this.tokenId, payment);
-        } else {
+        if (this.paymentAddress != null) {
+            payment.setToAddress(this.paymentAddress);
             this.view.getPaymentConfirmationListener()
                     .onExternalPaymentApproved(payment);
+        } else {
+            this.view.getPaymentConfirmationListener()
+                    .onTokenPaymentApproved(this.tokenId, payment);
         }
         this.view.dismiss();
     }
@@ -110,13 +110,6 @@ public class PaymentRequestConfirmPresenter implements Presenter<PaymentConfirma
         this.paymentType = this.view.getArguments().getInt(PaymentConfirmationDialog.PAYMENT_TYPE);
     }
 
-    private void setExternalUserInfo() {
-        setTitle();
-        setPaymentAddress();
-        setMemo();
-        setLocalCurrency();
-    }
-
     private void setPaymentAddress() {
         this.view.getBinding().paymentAddress.setVisibility(View.VISIBLE);
         final String paymentAddress = this.view.getString(R.string.payment_address, this.paymentAddress);
@@ -133,7 +126,7 @@ public class PaymentRequestConfirmPresenter implements Presenter<PaymentConfirma
                 .toSingle()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        this::setTokenUserInfo,
+                        this::updateView,
                         this::handleUserError
                 );
 
@@ -149,9 +142,13 @@ public class PaymentRequestConfirmPresenter implements Presenter<PaymentConfirma
         ).show();
     }
 
-    private void setTokenUserInfo(final User user) {
+    private void updateView(final User user) {
+        if (user != null) {
+            setUserInfo(user);
+        } else {
+            setPaymentAddress();
+        }
         setTitle();
-        setUserInfo(user);
         setMemo();
         setLocalCurrency();
     }
