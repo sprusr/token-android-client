@@ -108,6 +108,7 @@ public class RecentAdapter extends RecyclerView.Adapter<ConversationViewHolder> 
 
     private String formatLastMessage(final SofaMessage sofaMessage) {
         final User localUser = getCurrentLocalUser();
+        final boolean sentByLocal = sofaMessage.isSentBy(localUser);
 
         try {
             switch (sofaMessage.getType()) {
@@ -115,15 +116,13 @@ public class RecentAdapter extends RecyclerView.Adapter<ConversationViewHolder> 
                     final Message message = this.adapters.messageFrom(sofaMessage.getPayload());
                     return message.getBody();
                 }
-
                 case SofaType.PAYMENT: {
                     final Payment payment = this.adapters.paymentFrom(sofaMessage.getPayload());
-                    return payment.toUserVisibleString(sofaMessage.isSentBy(localUser));
+                    return payment.toUserVisibleString(sentByLocal, sofaMessage.getSendState());
                 }
-
                 case SofaType.PAYMENT_REQUEST: {
                     final PaymentRequest request = this.adapters.txRequestFrom(sofaMessage.getPayload());
-                    return request.toUserVisibleString(sofaMessage.isSentBy(localUser));
+                    return request.toUserVisibleString(sentByLocal, sofaMessage.getSendState());
                 }
                 case SofaType.COMMAND_REQUEST:
                 case SofaType.INIT_REQUEST:

@@ -19,11 +19,13 @@ package com.tokenbrowser.model.sofa;
 
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
+import android.support.annotation.StringRes;
 
 import com.squareup.moshi.Json;
 import com.tokenbrowser.R;
 import com.tokenbrowser.crypto.HDWallet;
 import com.tokenbrowser.crypto.util.TypeConverter;
+import com.tokenbrowser.model.local.SendState;
 import com.tokenbrowser.util.EthUtil;
 import com.tokenbrowser.util.LocaleUtil;
 import com.tokenbrowser.view.BaseApplication;
@@ -135,13 +137,17 @@ public class Payment {
                 .map(this::setLocalPrice);
     }
 
-    public String toUserVisibleString(final boolean sentByLocal) {
-        final int stringId = sentByLocal
+    public String toUserVisibleString(final boolean sentByLocal, final @SendState.State int sentStatus) {
+        final @StringRes int successMessageId = sentByLocal
                 ? R.string.latest_message__payment_outgoing
                 : R.string.latest_message__payment_incoming;
+        final @StringRes int messageId = sentStatus == SendState.STATE_FAILED
+                ? R.string.latest_message__payment_failed
+                : successMessageId;
+
         return String.format(
                 LocaleUtil.getLocale(),
-                BaseApplication.get().getResources().getString(stringId),
+                BaseApplication.get().getResources().getString(messageId),
                 getLocalPrice());
     }
 
