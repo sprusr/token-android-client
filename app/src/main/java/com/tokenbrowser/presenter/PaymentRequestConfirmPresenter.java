@@ -167,10 +167,7 @@ public class PaymentRequestConfirmPresenter implements Presenter<PaymentConfirma
         this.view.getBinding().username.setText(user.getUsername());
         final String reviewCount = BaseApplication.get().getString(R.string.parentheses, user.getReviewCount());
         this.view.getBinding().numberOfRatings.setText(reviewCount);
-        final double reputationScore = user.getReputationScore() != null
-                ? user.getReputationScore()
-                : 0;
-        this.view.getBinding().ratingView.setStars(reputationScore);
+        this.view.getBinding().ratingView.setStars(user.getReputationScore());
     }
 
     private void setMemo() {

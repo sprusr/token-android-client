@@ -72,11 +72,11 @@ public class StarRatingView extends RecyclerView {
         adapter.setOnItemClickListener(listener);
     }
 
-    public void setStars(final double rating) {
-        if (this.getAdapter() == null) {
-            return;
-        }
-
+    public void setStars(final Double reputationScore) {
+        if (this.getAdapter() == null) return;
+        final double rating = reputationScore != null
+                ? reputationScore
+                : 0;
         final StarAdapter adapter = (StarAdapter) this.getAdapter();
         adapter.setStars(rating);
     }

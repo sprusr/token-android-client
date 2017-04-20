@@ -49,12 +49,7 @@ public class ContactViewHolder extends ClickableViewHolder {
         this.name.setText(user.getDisplayName());
         this.username.setText(user.getUsername());
         ImageUtil.loadFromNetwork(user.getAvatar(), this.avatar);
-
-        final double reputationScore = user.getReputationScore() != null
-                ? user.getReputationScore()
-                : 0;
-
-        this.ratingView.setStars(reputationScore);
+        this.ratingView.setStars(user.getReputationScore());
         final String reviewCount = BaseApplication.get().getString(R.string.parentheses, user.getReviewCount());
         this.reviewCount.setText(reviewCount);
     }

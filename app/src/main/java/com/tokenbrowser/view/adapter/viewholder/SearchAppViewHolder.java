@@ -48,10 +48,7 @@ public class SearchAppViewHolder extends RecyclerView.ViewHolder {
 
     public void setApp(final App app) {
         this.appLabel.setText(app.getCustom().getName());
-        final double reputationScore = app.getReputationScore() != null
-                ? app.getReputationScore()
-                : 0;
-        this.ratingView.setStars(reputationScore);
+        this.ratingView.setStars(app.getReputationScore());
         final String reviewCount = BaseApplication.get().getString(R.string.parentheses, app.getReviewCount());
         this.reviewCount.setText(reviewCount);
 

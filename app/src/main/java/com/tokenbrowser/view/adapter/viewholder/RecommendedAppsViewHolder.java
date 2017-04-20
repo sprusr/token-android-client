@@ -48,15 +48,8 @@ public class RecommendedAppsViewHolder extends RecyclerView.ViewHolder {
     }
 
     public void setCategory(final App app) {
-        if (app == null) {
-            return;
-        }
-
-        final double reputationScore = app.getReputationScore() != null
-                ? app.getReputationScore()
-                : 0;
-        this.ratingView.setStars(reputationScore);
-
+        if (app == null) return;
+        this.ratingView.setStars(app.getReputationScore());
         ImageUtil.loadFromNetwork(app.getCustom().getAvatar(), this.appImage);
     }
 

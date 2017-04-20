@@ -120,7 +120,7 @@ public final class SettingsPresenter implements
 
         this.fragment.getBinding().name.setText(this.fragment.getString(R.string.profile__unknown_name));
         this.fragment.getBinding().username.setText("");
-        this.fragment.getBinding().ratingView.setStars(0);
+        this.fragment.getBinding().ratingView.setStars(null);
         final String reviewCount = this.fragment.getString(R.string.parentheses, 0);
         this.fragment.getBinding().numberOfRatings.setText(reviewCount);
         this.fragment.getBinding().avatar.setImageResource(R.drawable.ic_unknown_user_24dp);
@@ -238,10 +238,7 @@ public final class SettingsPresenter implements
 
         this.fragment.getBinding().name.setText(this.localUser.getDisplayName());
         this.fragment.getBinding().username.setText(this.localUser.getUsername());
-        final double reputationScore = this.localUser.getReputationScore() != null
-                ? this.localUser.getReputationScore()
-                : 0;
-        this.fragment.getBinding().ratingView.setStars(reputationScore);
+        this.fragment.getBinding().ratingView.setStars(this.localUser.getReputationScore());
         final String reviewCount = this.fragment.getString(R.string.parentheses, this.localUser.getReviewCount());
         this.fragment.getBinding().numberOfRatings.setText(reviewCount);
         ImageUtil.loadFromNetwork(this.localUser.getAvatar(), this.fragment.getBinding().avatar);
