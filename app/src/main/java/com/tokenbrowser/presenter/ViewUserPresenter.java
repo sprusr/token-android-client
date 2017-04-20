@@ -91,7 +91,10 @@ public final class ViewUserPresenter implements Presenter<ViewUserActivity> {
         final Subscription userSub =
                 getUserById(this.userAddress)
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::handleUserLoaded, this::handleUserLoadingFailed);
+                .subscribe(
+                        this::handleUserLoaded,
+                        this::handleUserLoadingFailed
+                );
 
         this.subscriptions.add(userSub);
     }
@@ -109,7 +112,10 @@ public final class ViewUserPresenter implements Presenter<ViewUserActivity> {
         final Subscription reputationSub =
                 getReputationScoreById(this.userAddress)
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::handleReputationResponse, this::handleReputationError);
+                .subscribe(
+                        this::handleReputationResponse,
+                        this::handleReputationError
+                );
 
         this.subscriptions.add(reputationSub);
     }

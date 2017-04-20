@@ -94,8 +94,9 @@ public class SignInPresenter implements Presenter<SignInActivity> {
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnSuccess(__ -> SharedPrefsUtil.setHasBackedUpPhrase())
                 .subscribe(
-                        unused -> handleSuccess(),
-                        throwable -> handleError());
+                        __ -> handleSuccess(),
+                        __ -> handleError()
+                );
 
         this.subscriptions.add(sub);
     }

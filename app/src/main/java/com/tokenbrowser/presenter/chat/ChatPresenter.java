@@ -82,6 +82,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import retrofit2.Response;
 import rx.Single;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
@@ -148,14 +149,15 @@ public final class ChatPresenter implements
     private void searchForUsername(final String username) {
         final Subscription sub =
                 BaseApplication
-                        .get()
-                        .getTokenManager()
-                        .getUserManager()
-                        .searchOnlineUsers(username)
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(
-                                users -> handleSearchResult(username, users),
-                                e -> LogUtil.e(getClass(), e.toString()));
+                .get()
+                .getTokenManager()
+                .getUserManager()
+                .searchOnlineUsers(username)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        users -> handleSearchResult(username, users),
+                        throwable -> LogUtil.e(getClass(), throwable.toString())
+                );
 
         this.subscriptions.add(sub);
     }
@@ -477,13 +479,16 @@ public final class ChatPresenter implements
     private void fetchUserFromAddress(final String remoteUserAddress) {
         final Subscription sub =
                 BaseApplication
-                        .get()
-                        .getTokenManager()
-                        .getUserManager()
-                        .getUserFromAddress(remoteUserAddress)
-                        .subscribeOn(Schedulers.io())
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(this::handleUserLoaded, this::handleUserFetchFailed);
+                .get()
+                .getTokenManager()
+                .getUserManager()
+                .getUserFromAddress(remoteUserAddress)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        this::handleUserLoaded,
+                        this::handleUserFetchFailed
+                );
 
         this.subscriptions.add(sub);
     }
@@ -866,21 +871,40 @@ public final class ChatPresenter implements
                 .setReview(reviewText)
                 .setReviewee(this.remoteUser.getTokenId());
 
-        final Subscription sub = BaseApplication
+        final Subscription sub =
+                submitReview(review)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        __ -> handleSubmitSuccess(),
+                        this::handleSubmitError
+                );
+
+        this.subscriptions.add(sub);
+    }
+
+    private Single<Response<Void>> submitReview(final Review review) {
+        return BaseApplication
                 .get()
                 .getTokenManager()
                 .getUserManager()
                 .getTimestamp()
-                .flatMap(serverTime -> BaseApplication.get()
+                .flatMap(serverTime ->
+                        BaseApplication.get()
                         .getTokenManager()
                         .getReputationManager()
-                        .submitReview(review, serverTime.get()))
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(response ->
-                        Toast.makeText(this.activity, "Review submitted", Toast.LENGTH_SHORT).show(),
-                        t -> LogUtil.e(getClass(), "Error when sending review " + t.getMessage()));
+                        .submitReview(review, serverTime.get()));
+    }
 
-        this.subscriptions.add(sub);
+    private void handleSubmitSuccess() {
+        Toast.makeText(
+                this.activity,
+                "Review submitted",
+                Toast.LENGTH_SHORT
+        ).show();
+    }
+
+    private void handleSubmitError(final Throwable throwable) {
+        LogUtil.e(getClass(), "Error when sending review " + throwable.getMessage());
     }
 
     @Override

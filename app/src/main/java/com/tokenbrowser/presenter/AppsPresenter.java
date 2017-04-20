@@ -99,7 +99,8 @@ public class AppsPresenter implements Presenter<AppsFragment>{
     }
 
     private void initSearchView() {
-        final Subscription sub = RxTextView.textChanges(this.fragment.getBinding().search)
+        final Subscription sub =
+                RxTextView.textChanges(this.fragment.getBinding().search)
                 .skip(1)
                 .debounce(400, TimeUnit.MILLISECONDS)
                 .map(CharSequence::toString)
@@ -107,7 +108,10 @@ public class AppsPresenter implements Presenter<AppsFragment>{
                 .doOnNext(searchString -> updateViewState())
                 .flatMap(this::runSearchQuery)
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::addAppsToRecyclerView, this::handleSearchErrorResponse);
+                .subscribe(
+                        this::addAppsToRecyclerView,
+                        this::handleSearchErrorResponse
+                );
 
         updateViewState();
         this.subscriptions.add(sub);
@@ -150,7 +154,10 @@ public class AppsPresenter implements Presenter<AppsFragment>{
                 .getAppsManager()
                 .getFeaturedApps()
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::addAppsData, this::handleRecommendedAppsErrorResponse);
+                .subscribe(
+                        this::addAppsData,
+                        this::handleRecommendedAppsErrorResponse
+                );
 
         this.subscriptions.add(sub);
     }

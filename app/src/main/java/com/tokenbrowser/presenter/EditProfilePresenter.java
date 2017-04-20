@@ -147,14 +147,18 @@ public class EditProfilePresenter implements Presenter<EditProfileActivity> {
                     .setAbout(activity.getBinding().inputAbout.getText().toString().trim())
                     .setLocation(activity.getBinding().inputLocation.getText().toString().trim());
 
-            subscriptions.add(BaseApplication.get()
+            final Subscription sub =
+                    BaseApplication.get()
                     .getTokenManager()
                     .getUserManager()
                     .updateUser(userDetails)
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(
                             __ -> handleUserUpdated(),
-                            error -> handleUserUpdateFailed(error)));
+                            throwable -> handleUserUpdateFailed(throwable)
+                    );
+
+            subscriptions.add(sub);
         }
 
         private boolean validate() {
@@ -343,7 +347,8 @@ public class EditProfilePresenter implements Presenter<EditProfileActivity> {
         if (!file.exists()) return;
 
         this.isUploading = true;
-        final Subscription sub = BaseApplication.get()
+        final Subscription sub =
+                BaseApplication.get()
                 .getTokenManager()
                 .getUserManager()
                 .uploadAvatar(file)
@@ -352,7 +357,7 @@ public class EditProfilePresenter implements Presenter<EditProfileActivity> {
                 .doOnError(unused -> tryDeleteCachedFile(file))
                 .subscribe(
                         this::handleUploadSuccess,
-                        unused -> handleUploadError()
+                        __ -> handleUploadError()
                 );
 
         this.subscriptions.add(sub);

@@ -103,7 +103,8 @@ public final class UserSearchPresenter
             return;
         }
 
-        final Subscription sub = BaseApplication
+        final Subscription sub =
+                BaseApplication
                 .get()
                 .getTokenManager()
                 .getUserManager()
@@ -111,9 +112,14 @@ public final class UserSearchPresenter
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                         users -> this.adapter.setUsers(users),
-                        e -> LogUtil.e(getClass(), e.toString()));
+                        this::handleSearchError
+                );
 
         this.subscriptions.add(sub);
+    }
+
+    private void handleSearchError(final Throwable throwable) {
+        LogUtil.e(getClass(), throwable.toString());
     }
 
     private final OnSingleClickListener handleCloseClicked = new OnSingleClickListener() {

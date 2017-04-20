@@ -119,7 +119,8 @@ public class DepositPresenter implements Presenter<DepositActivity> {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                         this::handleQrCodeGenerated,
-                        this::handleQrCodeError);
+                        this::handleQrCodeError
+                );
 
         this.subscriptions.add(sub);
     }

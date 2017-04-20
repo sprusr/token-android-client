@@ -140,13 +140,17 @@ public final class ViewProfilePresenter implements Presenter<ViewProfileActivity
     }
 
     private void fetchUserReputation(final String userAddress) {
-        final Subscription reputationSub = BaseApplication
+        final Subscription reputationSub =
+                BaseApplication
                 .get()
                 .getTokenManager()
                 .getReputationManager()
                 .getReputationScore(userAddress)
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::handleReputationResponse, this::handleReputationError);
+                .subscribe(
+                        this::handleReputationResponse,
+                        this::handleReputationError
+                );
 
         this.subscriptions.add(reputationSub);
     }

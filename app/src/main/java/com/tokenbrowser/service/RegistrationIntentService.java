@@ -113,7 +113,10 @@ public class RegistrationIntentService extends IntentService {
                 .registerForGcm(token)
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.io())
-                .subscribe(this::handleGcmSuccess, this::handleGcmFailure);
+                .subscribe(
+                        this::handleGcmSuccess,
+                        this::handleGcmFailure
+                );
     }
 
     public void handleGcmSuccess(final Void unused) {
@@ -127,7 +130,10 @@ public class RegistrationIntentService extends IntentService {
                 .getTokenManager()
                 .getBalanceManager()
                 .watchForWalletTransactions()
-                .subscribe(this::handleWatchWalletSuccess, this::handleWatchWalletFailure);
+                .subscribe(
+                        this::handleWatchWalletSuccess,
+                        this::handleWatchWalletFailure
+                );
     }
 
     public void handleGcmFailure(final Throwable error) {

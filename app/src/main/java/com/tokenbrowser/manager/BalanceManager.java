@@ -89,7 +89,10 @@ public class BalanceManager {
                 .getBalance(this.wallet.getPaymentAddress())
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.io())
-                .subscribe(this::handleNewBalance, this::handleError);
+                .subscribe(
+                        this::handleNewBalance,
+                        this::handleError
+                );
     }
 
     private void handleNewBalance(final Balance balance) {

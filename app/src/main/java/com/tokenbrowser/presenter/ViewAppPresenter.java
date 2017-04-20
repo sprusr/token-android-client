@@ -95,20 +95,24 @@ public class ViewAppPresenter implements Presenter<ViewAppActivity> {
                 getAppById(this.appTokenId)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::handleAppLoaded, this::handleAppLoadingFailed);
+                .subscribe(
+                        this::handleAppLoaded,
+                        this::handleAppLoadingFailed
+                );
 
         final Subscription userSub =
                 BaseApplication
-                        .get()
-                        .getTokenManager()
-                        .getUserManager()
-                        .getUserFromAddress(this.appTokenId)
-                        .subscribeOn(Schedulers.io())
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .doOnCompleted(this::updateFavoriteButtonState)
-                        .subscribe(
-                                user -> this.appAsUser = user,
-                                this::handleAppLoadingFailed);
+                .get()
+                .getTokenManager()
+                .getUserManager()
+                .getUserFromAddress(this.appTokenId)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnCompleted(this::updateFavoriteButtonState)
+                .subscribe(
+                        user -> this.appAsUser = user,
+                        this::handleAppLoadingFailed
+                );
 
         this.subscriptions.add(appSub);
         this.subscriptions.add(userSub);
@@ -136,13 +140,17 @@ public class ViewAppPresenter implements Presenter<ViewAppActivity> {
     }
 
     private void fetchUserReputation() {
-        final Subscription reputationSub = BaseApplication
+        final Subscription reputationSub =
+                BaseApplication
                 .get()
                 .getTokenManager()
                 .getReputationManager()
                 .getReputationScore(this.appTokenId)
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::handleReputationResponse, this::handleReputationError);
+                .subscribe(
+                        this::handleReputationResponse,
+                        this::handleReputationError
+                );
 
         this.subscriptions.add(reputationSub);
     }

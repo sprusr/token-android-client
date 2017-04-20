@@ -313,12 +313,14 @@ public final class SofaMessageManager {
     }
 
     private void attachSubscribers() {
-        final Subscription sub = this.chatMessageQueue
+        final Subscription sub =
+                this.chatMessageQueue
                 .observeOn(Schedulers.io())
                 .subscribeOn(Schedulers.io())
                 .subscribe(
                         this::handleMessage,
-                        this::handleMessageError);
+                        this::handleMessageError
+                );
 
         this.subscriptions.add(sub);
 
@@ -622,17 +624,20 @@ public final class SofaMessageManager {
 
 
     private void tryTriggerOnboarding() {
-        if (SharedPrefsUtil.hasOnboarded()) {
-            return;
-        }
+        if (SharedPrefsUtil.hasOnboarded()) return;
 
         IdService.getApi()
-                .searchByUsername(ONBOARDING_BOT_NAME)
-                .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.io())
-                .subscribe(
-                        this::handleOnboardingBotFound,
-                        e -> LogUtil.e(getClass(), "Onboarding bot not found. " + e.toString()));
+        .searchByUsername(ONBOARDING_BOT_NAME)
+        .subscribeOn(Schedulers.io())
+        .observeOn(Schedulers.io())
+        .subscribe(
+                this::handleOnboardingBotFound,
+                this::handleOnboardingBotError
+        );
+    }
+
+    private void handleOnboardingBotError(final Throwable throwable) {
+        LogUtil.e(getClass(), "Onboarding bot not found. " + throwable.toString());
     }
 
     private void handleOnboardingBotFound(final UserSearchResults results) {
@@ -647,13 +652,13 @@ public final class SofaMessageManager {
 
     private void sendOnboardMessageToOnboardingBot(final User onboardingBot) {
         BaseApplication
-                .get()
-                .getTokenManager()
-                .getUserManager()
-                .getCurrentUser()
-                .map(this::generateOnboardingMessage)
-                .doOnSuccess(__ -> SharedPrefsUtil.setHasOnboarded())
-                .subscribe(onboardingMessage -> this.sendOnboardingMessage(onboardingMessage, onboardingBot));
+            .get()
+            .getTokenManager()
+            .getUserManager()
+            .getCurrentUser()
+             .map(this::generateOnboardingMessage)
+             .doOnSuccess(__ -> SharedPrefsUtil.setHasOnboarded())
+             .subscribe(onboardingMessage -> this.sendOnboardingMessage(onboardingMessage, onboardingBot));
     }
 
     private void sendOnboardingMessage(final SofaMessage onboardingMessage, final User onboardingBot) {

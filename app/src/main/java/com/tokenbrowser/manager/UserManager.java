@@ -115,10 +115,13 @@ public class UserManager {
         IdService
             .getApi()
             .getTimestamp()
-            .subscribe(this::registerNewUserWithTimestamp, this::handleError);
+            .subscribe(
+                    this::registerNewUserWithTimestamp,
+                    this::handleUserError
+            );
     }
 
-    private void handleError(final Throwable throwable) {
+    private void handleUserError(final Throwable throwable) {
         LogUtil.e(getClass(), "Unable to register/fetch user: " + throwable.toString());
     }
 
@@ -126,9 +129,12 @@ public class UserManager {
         final UserDetails ud = new UserDetails().setPaymentAddress(this.wallet.getPaymentAddress());
 
         IdService
-                .getApi()
-                .registerUser(ud, serverTime.get())
-                .subscribe(this::updateCurrentUser, this::handleUserRegistrationFailed);
+            .getApi()
+            .registerUser(ud, serverTime.get())
+            .subscribe(
+                    this::updateCurrentUser,
+                    this::handleUserRegistrationFailed
+            );
     }
 
     private void handleUserRegistrationFailed(final Throwable throwable) {
@@ -139,9 +145,13 @@ public class UserManager {
     }
 
     private void getExistingUser() {
-        IdService.getApi()
-                .getUser(this.wallet.getOwnerAddress())
-                .subscribe(this::updateCurrentUser, this::handleError);
+        IdService
+            .getApi()
+            .getUser(this.wallet.getOwnerAddress())
+            .subscribe(
+                    this::updateCurrentUser,
+                    this::handleUserError
+            );
     }
 
     private void updateCurrentUser(final User user) {
