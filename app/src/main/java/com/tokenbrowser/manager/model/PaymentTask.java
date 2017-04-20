@@ -48,9 +48,7 @@ public class PaymentTask {
     public PaymentTask(
             final Payment payment,
             final @Action int action) {
-        this.user = null;
-        this.payment = payment;
-        this.action = action;
+        this(null, payment, action);
     }
 
     public User getUser() {
