@@ -27,6 +27,7 @@ import com.tokenbrowser.R;
 import com.tokenbrowser.model.sofa.Payment;
 import com.tokenbrowser.model.sofa.SofaType;
 import com.tokenbrowser.util.EthUtil;
+import com.tokenbrowser.util.LogUtil;
 import com.tokenbrowser.view.BaseApplication;
 
 import rx.android.schedulers.AndroidSchedulers;
@@ -54,7 +55,10 @@ public class TransactionViewHolder extends RecyclerView.ViewHolder {
         payment
                 .getPaymentDirection()
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(direction -> this.handlePaymentDirection(payment, direction));
+                .subscribe(
+                        direction -> this.handlePaymentDirection(payment, direction),
+                        this::handlePaymentDirectionError
+                );
     }
 
     private void renderAmounts(final Payment payment) {
@@ -84,5 +88,9 @@ public class TransactionViewHolder extends RecyclerView.ViewHolder {
             this.direction.setText(BaseApplication.get().getResources().getString(R.string.payment_from));
             this.address.setText(payment.getFromAddress());
         }
+    }
+
+    private void handlePaymentDirectionError(final Throwable throwable) {
+        LogUtil.exception(getClass(), "Error while getting payment direction", throwable);
     }
 }

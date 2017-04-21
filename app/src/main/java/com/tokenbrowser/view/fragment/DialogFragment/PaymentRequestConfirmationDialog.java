@@ -125,7 +125,8 @@ public class PaymentRequestConfirmationDialog extends DialogFragment {
     }
 
     private void fetchUser() {
-        final Subscription sub = BaseApplication
+        final Subscription sub =
+                BaseApplication
                 .get()
                 .getTokenManager()
                 .getUserManager()
@@ -141,7 +142,7 @@ public class PaymentRequestConfirmationDialog extends DialogFragment {
     }
 
     private void handleUserError(final Throwable throwable) {
-        LogUtil.e(getClass(), throwable.toString());
+        LogUtil.exception(getClass(), "Couldn't find user with this address", throwable);
     }
 
     private void updateView(final User user) {
@@ -175,10 +176,10 @@ public class PaymentRequestConfirmationDialog extends DialogFragment {
 
         final Subscription sub =
                 convertEthToLocalCurrency(ethAmount)
-                .subscribe((localCurrency) -> {
-                    final String usdEth = this.getString(R.string.eth_usd, localCurrency, getEthValue());
-                    this.binding.ethUsd.setText(usdEth);
-                });
+                .subscribe(
+                        this::handleLocalCurrency,
+                        this::handleLocalCurrencyError
+                );
 
         this.subscriptions.add(sub);
     }
@@ -188,6 +189,15 @@ public class PaymentRequestConfirmationDialog extends DialogFragment {
                 .getTokenManager()
                 .getBalanceManager()
                 .convertEthToLocalCurrencyString(ethAmount);
+    }
+
+    private void handleLocalCurrency(final String localCurrency) {
+        final String usdEth = this.getString(R.string.eth_usd, localCurrency, getEthValue());
+        this.binding.ethUsd.setText(usdEth);
+    }
+
+    private void handleLocalCurrencyError(final Throwable throwable) {
+        LogUtil.exception(getClass(), "Error when converting eth to local currency", throwable);
     }
 
     private String getEthValue() {

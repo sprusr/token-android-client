@@ -23,7 +23,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.crashlytics.android.Crashlytics;
 import com.tokenbrowser.R;
 import com.tokenbrowser.model.local.PendingTransaction;
 import com.tokenbrowser.model.sofa.Payment;
@@ -65,8 +64,7 @@ public class TransactionsAdapter extends RecyclerView.Adapter<TransactionViewHol
             final Payment payment = this.adapters.paymentFrom(sofaMessage);
             holder.setPayment(payment);
         } catch (final IOException ex) {
-            LogUtil.e(getClass(), ex.toString());
-            Crashlytics.logException(ex);
+            LogUtil.exception(getClass(), ex);
         }
     }
 

@@ -60,16 +60,17 @@ public class ChatNotificationManager {
     }
 
     public static void showNotification(final DecryptedSignalMessage signalMessage) {
-        if (signalMessage == null) {
-            return;
-        }
+        if (signalMessage == null) return;
 
         BaseApplication
             .get()
             .getTokenManager()
             .getUserManager()
             .getUserFromAddress(signalMessage.getSource())
-            .subscribe((user) -> handleUserLookup(user, signalMessage));
+            .subscribe(
+                    (user) -> handleUserLookup(user, signalMessage),
+                    throwable -> LogUtil.exception(ChatNotificationManager.class, "Error while fetching user from address", throwable)
+            );
     }
 
     private static void handleUserLookup(final User user, final DecryptedSignalMessage signalMessage) {
