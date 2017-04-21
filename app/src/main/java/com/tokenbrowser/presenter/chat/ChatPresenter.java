@@ -156,7 +156,7 @@ public final class ChatPresenter implements
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                         users -> handleSearchResult(username, users),
-                        throwable -> LogUtil.e(getClass(), throwable.toString())
+                        throwable -> LogUtil.exception(getClass(), "Couldn't find a user with this username", throwable)
                 );
 
         this.subscriptions.add(sub);
@@ -172,14 +172,24 @@ public final class ChatPresenter implements
             final SofaMessage existingMessage,
             final @PaymentRequest.State int newState) {
 
-        final Subscription sub = getRemoteUser()
+        final Subscription sub =
+                getRemoteUser()
                 .subscribe(remoteUser ->
-                BaseApplication
+                        handleUpdatePaymentRequestState(remoteUser, existingMessage, newState),
+                        this::handleError
+                );
+
+        this.subscriptions.add(sub);
+    }
+
+    private void handleUpdatePaymentRequestState(final User remoteUser,
+                                                 final SofaMessage existingMessage,
+                                                 final @PaymentRequest.State int newState) {
+        BaseApplication
                 .get()
                 .getTokenManager()
                 .getTransactionManager()
-                .updatePaymentRequestState(remoteUser, existingMessage, newState));
-        this.subscriptions.add(sub);
+                .updatePaymentRequestState(remoteUser, existingMessage, newState);
     }
 
     private void handleSearchResult(final String searchedForUsername, final List<User> userResult) {
@@ -209,11 +219,15 @@ public final class ChatPresenter implements
     }
 
     private void initSubscribers() {
-        final Subscription walletSub = BaseApplication.get()
+        final Subscription walletSub =
+                BaseApplication.get()
                 .getTokenManager()
                 .getWallet()
                 .subscribeOn(Schedulers.io())
-                .subscribe(wallet -> this.userWallet = wallet);
+                .subscribe(
+                        wallet -> this.userWallet = wallet,
+                        this::handleError
+                );
 
         this.subscriptions.add(walletSub);
 
@@ -328,7 +342,7 @@ public final class ChatPresenter implements
                 photoFile = new FileUtil().createImageFileWithRandomName(this.activity);
                 this.captureImageFilename = photoFile.getName();
             } catch (IOException e) {
-                LogUtil.e(getClass(), "Error during creating image file " + e.getMessage());
+                LogUtil.exception(getClass(), "Error during creating image file ", e);
             }
             if (photoFile != null) {
                 final Uri photoURI = FileProvider.getUriForFile(
@@ -544,26 +558,38 @@ public final class ChatPresenter implements
     }
 
     private void sendPaymentWithValue(final String value) {
-        final Subscription sub = getRemoteUser()
-        .subscribe(remoteUser ->
-                BaseApplication.get()
+        final Subscription sub =
+                getRemoteUser()
+                .subscribe(
+                        remoteUser -> sendPayment(remoteUser, value),
+                        this::handleError
+                );
+
+        this.subscriptions.add(sub);
+    }
+
+    private void sendPayment(final User remoteUser, final String value) {
+        BaseApplication.get()
                 .getTokenManager()
                 .getTransactionManager()
-                .sendPayment(remoteUser, value));
-        this.subscriptions.add(sub);
+                .sendPayment(remoteUser, value);
     }
 
     private void sendPaymentRequestWithValue(final String value) {
         new PaymentRequest()
-                .setDestinationAddress(userWallet.getPaymentAddress())
+                .setDestinationAddress(this.userWallet.getPaymentAddress())
                 .setValue(value)
                 .generateLocalPrice()
-                .subscribe((request) -> {
-                    final String messageBody = this.adapters.toJson(request);
-                    final SofaMessage message = new SofaMessage().makeNew(getCurrentLocalUser(), messageBody);
-                    this.outgoingMessageQueue.send(message);
-                });
+                .subscribe(
+                        this::sendPaymentRequest,
+                        this::handleError
+                );
+    }
 
+    private void sendPaymentRequest(final PaymentRequest request) {
+        final String messageBody = this.adapters.toJson(request);
+        final SofaMessage message = new SofaMessage().makeNew(getCurrentLocalUser(), messageBody);
+        this.outgoingMessageQueue.send(message);
     }
 
     private void initLoadingSpinner(final User remoteUser) {
@@ -601,13 +627,16 @@ public final class ChatPresenter implements
                 .getSofaMessageManager()
                 .registerForConversationChanges(remoteUser.getTokenId());
 
-        final Subscription subConversationLoaded = BaseApplication
+        final Subscription subConversationLoaded =
+                BaseApplication
                 .get()
                 .getTokenManager()
                 .getSofaMessageManager()
                 .loadConversation(remoteUser.getTokenId())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::handleConversationLoaded);
+                .subscribe(
+                        this::handleConversationLoaded,
+                        this::handleError);
 
         this.subscriptions.add(subConversationLoaded);
     }
@@ -686,7 +715,7 @@ public final class ChatPresenter implements
             }
 
         } catch (IOException e) {
-            LogUtil.e(getClass(), "Error during handling visibility of keyboard");
+            LogUtil.exception(getClass(), "Error during handling visibility of keyboard", e);
         }
     }
 
@@ -739,14 +768,14 @@ public final class ChatPresenter implements
             try {
                 handleGalleryResult(resultHolder);
             } catch (IOException e) {
-                LogUtil.e(getClass(), "Error during image saving " + e.getMessage());
+                LogUtil.exception(getClass(), "Error during image saving", e);
                 return false;
             }
         } else if (resultHolder.getRequestCode() == CAPTURE_IMAGE) {
             try {
                 handleCameraResult();
             } catch (FileNotFoundException e) {
-                LogUtil.e(getClass(), "Error during sending camera image " + e.getMessage());
+                LogUtil.exception(getClass(), "Error during sending camera image", e);
                 return false;
             }
         } else if (resultHolder.getRequestCode() == CONFIRM_IMAGE) {
@@ -834,12 +863,16 @@ public final class ChatPresenter implements
     }
 
     private void rateRemoteUser() {
-        this.subscriptions.add(
-            getRemoteUser()
+        final Subscription sub =
+                getRemoteUser()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::rateUser)
-        );
+                .subscribe(
+                        this::rateUser,
+                        this::handleError
+                );
+
+        this.subscriptions.add(sub);
     }
 
     private void rateUser(final User user) {
@@ -850,18 +883,26 @@ public final class ChatPresenter implements
     }
 
     private void viewRemoteUserProfile() {
-        this.subscriptions.add(
+        final Subscription sub =
                 getRemoteUser()
-                        .subscribeOn(Schedulers.io())
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(remoteUser -> viewProfile(remoteUser.getTokenId()))
-        );
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        remoteUser -> viewProfile(remoteUser.getTokenId()),
+                        this::handleError
+                );
+
+        this.subscriptions.add(sub);
     }
 
     private void viewProfile(final String ownerAddress) {
         final Intent intent = new Intent(this.activity, ViewUserActivity.class)
                 .putExtra(ViewUserActivity.EXTRA__USER_ADDRESS, ownerAddress);
         this.activity.startActivity(intent);
+    }
+
+    private void handleError(final Throwable throwable) {
+        LogUtil.exception(getClass(), throwable);
     }
 
     @Override
@@ -904,7 +945,7 @@ public final class ChatPresenter implements
     }
 
     private void handleSubmitError(final Throwable throwable) {
-        LogUtil.e(getClass(), "Error when sending review " + throwable.getMessage());
+        LogUtil.exception(getClass(), "Error when sending review", throwable);
     }
 
     @Override

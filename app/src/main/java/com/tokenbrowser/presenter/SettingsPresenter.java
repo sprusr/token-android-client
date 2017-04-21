@@ -28,6 +28,7 @@ import com.tokenbrowser.R;
 import com.tokenbrowser.model.local.User;
 import com.tokenbrowser.model.network.Balance;
 import com.tokenbrowser.util.ImageUtil;
+import com.tokenbrowser.util.LogUtil;
 import com.tokenbrowser.util.OnSingleClickListener;
 import com.tokenbrowser.util.SharedPrefsUtil;
 import com.tokenbrowser.view.BaseApplication;
@@ -84,7 +85,9 @@ public final class SettingsPresenter implements
     }
 
     private void fetchUser() {
-        final Subscription sub = BaseApplication.get()
+        final Subscription sub =
+                BaseApplication
+                .get()
                 .getTokenManager()
                 .getUserManager()
                 .getUserObservable()
@@ -168,9 +171,16 @@ public final class SettingsPresenter implements
                 .first()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::showDialog);
+                .subscribe(
+                        this::showDialog,
+                        this::handleDialogError
+                );
 
         this.subscriptions.add(sub);
+    }
+
+    private void handleDialogError(final Throwable throwable) {
+        LogUtil.exception(getClass(), "Error showing dialog", throwable);
     }
 
     private void showDialog(final Balance balance) {
@@ -275,8 +285,20 @@ public final class SettingsPresenter implements
                 balance
                         .getFormattedLocalBalance()
                         .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(localBalance -> this.fragment.getBinding().localCurrencyBalance.setText(localBalance));
+                        .subscribe(
+                                this::handleFormattedLocalBalance,
+                                this::handleFormattedLocalBalanceError
+                        );
+        
         this.subscriptions.add(getLocalBalanceSub);
+    }
+
+    private void handleFormattedLocalBalance(final String localBalance) {
+        this.fragment.getBinding().localCurrencyBalance.setText(localBalance);
+    }
+
+    private void handleFormattedLocalBalanceError(final Throwable throwable) {
+        LogUtil.exception(getClass(), "Error while getting local balance", throwable);
     }
 
     private void initClickListeners() {

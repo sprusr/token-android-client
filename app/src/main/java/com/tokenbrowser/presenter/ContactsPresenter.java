@@ -25,8 +25,10 @@ import android.support.v7.widget.RecyclerView;
 import android.view.MenuItem;
 import android.view.View;
 
+import com.tokenbrowser.model.local.Contact;
 import com.tokenbrowser.model.local.User;
 import com.tokenbrowser.R;
+import com.tokenbrowser.util.LogUtil;
 import com.tokenbrowser.util.OnSingleClickListener;
 import com.tokenbrowser.view.BaseApplication;
 import com.tokenbrowser.view.activity.ScannerActivity;
@@ -36,6 +38,8 @@ import com.tokenbrowser.view.adapter.ContactsAdapter;
 import com.tokenbrowser.view.adapter.listeners.OnItemClickListener;
 import com.tokenbrowser.view.custom.HorizontalLineDivider;
 import com.tokenbrowser.view.fragment.toplevel.ContactsFragment;
+
+import java.util.List;
 
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
@@ -89,12 +93,21 @@ public final class ContactsPresenter implements
                 .getUserManager()
                 .loadAllContacts()
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(contacts -> {
-                    this.adapter.mapContactsToUsers(contacts);
-                    updateEmptyState();
-                });
+                .subscribe(
+                        this::handleContacts,
+                        this::handleContactsError
+                );
 
         this.subscriptions.add(sub);
+    }
+
+    private void handleContacts(final List<Contact> contacts) {
+        this.adapter.mapContactsToUsers(contacts);
+        updateEmptyState();
+    }
+
+    private void handleContactsError(final Throwable throwable) {
+        LogUtil.exception(getClass(), "Error while fetching contacts", throwable);
     }
 
     private void initLongLivingObjects() {

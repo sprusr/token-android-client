@@ -20,6 +20,7 @@ package com.tokenbrowser.util;
 
 import android.util.Log;
 
+import com.crashlytics.android.Crashlytics;
 import com.tokenbrowser.BuildConfig;
 
 public class LogUtil  {
@@ -50,6 +51,21 @@ public class LogUtil  {
     public static void e(final Class callingClass, final String message) {
         final String logTag = getLogTag(callingClass);
         e(logTag, message);
+    }
+
+    @SuppressWarnings("rawtypes")
+    public static void exception(final Class callingClass, final Throwable throwable) {
+        final String logTag = getLogTag(callingClass);
+        Crashlytics.logException(throwable);
+        e(logTag, throwable.toString());
+    }
+
+    @SuppressWarnings("rawtypes")
+    public static void exception(final Class callingClass, final String additionalInfo, final Throwable throwable) {
+        final String logTag = getLogTag(callingClass);
+        final Throwable throwableWithInfo = new Throwable(additionalInfo + ": " + throwable.toString());
+        Crashlytics.logException(throwableWithInfo);
+        e(logTag, throwableWithInfo.toString());
     }
 
     @SuppressWarnings("rawtypes")

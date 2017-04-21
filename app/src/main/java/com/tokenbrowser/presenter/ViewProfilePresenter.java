@@ -100,7 +100,9 @@ public final class ViewProfilePresenter implements Presenter<ViewProfileActivity
     }
 
     private void fetchUser() {
-        final Subscription sub = BaseApplication.get()
+        final Subscription sub =
+                BaseApplication
+                .get()
                 .getTokenManager()
                 .getUserManager()
                 .getUserObservable()
@@ -169,7 +171,7 @@ public final class ViewProfilePresenter implements Presenter<ViewProfileActivity
     }
 
     private void handleReputationError(final Throwable throwable) {
-        LogUtil.e(getClass(), "Error during reputation fetching " + throwable.getMessage());
+        LogUtil.exception(getClass(), "Error during reputation fetching", throwable);
     }
 
     @Override

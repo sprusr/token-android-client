@@ -57,7 +57,7 @@ public class ImageConfirmationPresenter implements Presenter<ImageConfirmationAc
         try {
             this.imageFile = new FileUtil().saveFileFromUri(this.activity, fileUri);
         } catch (IOException e) {
-            LogUtil.e(getClass(), "Error during saving file to local storage " + e.getMessage());
+            LogUtil.exception(getClass(), "Error during saving file to local storage", e);
         }
     }
 

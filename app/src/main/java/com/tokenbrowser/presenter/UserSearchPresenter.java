@@ -76,25 +76,18 @@ public final class UserSearchPresenter
     private void initToolbar() {
         this.activity.getBinding().closeButton.setOnClickListener(this.handleCloseClicked);
 
-        final Subscription sub = RxTextView
+        final Subscription sub =
+                RxTextView
                 .textChangeEvents(this.activity.getBinding().userInput)
                 .debounce(500, TimeUnit.MILLISECONDS)
                 .map(event -> event.text().toString())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::submitQuery);
+                .subscribe(
+                        this::submitQuery,
+                        this::handleSearchError
+                );
 
         this.subscriptions.add(sub);
-    }
-
-    private void initRecyclerView() {
-        final RecyclerView recyclerView = this.activity.getBinding().searchResults;
-        final RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this.activity);
-        recyclerView.setLayoutManager(layoutManager);
-        recyclerView.setItemAnimator(new DefaultItemAnimator());
-        recyclerView.setAdapter(this.adapter);
-
-        final DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(recyclerView.getContext(), DividerItemDecoration.VERTICAL);
-        recyclerView.addItemDecoration(dividerItemDecoration);
     }
 
     private void submitQuery(final String query) {
@@ -119,7 +112,18 @@ public final class UserSearchPresenter
     }
 
     private void handleSearchError(final Throwable throwable) {
-        LogUtil.e(getClass(), throwable.toString());
+        LogUtil.exception(getClass(), "Error while searching for user", throwable);
+    }
+
+    private void initRecyclerView() {
+        final RecyclerView recyclerView = this.activity.getBinding().searchResults;
+        final RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this.activity);
+        recyclerView.setLayoutManager(layoutManager);
+        recyclerView.setItemAnimator(new DefaultItemAnimator());
+        recyclerView.setAdapter(this.adapter);
+
+        final DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(recyclerView.getContext(), DividerItemDecoration.VERTICAL);
+        recyclerView.addItemDecoration(dividerItemDecoration);
     }
 
     private final OnSingleClickListener handleCloseClicked = new OnSingleClickListener() {

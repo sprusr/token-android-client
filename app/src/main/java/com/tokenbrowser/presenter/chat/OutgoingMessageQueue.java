@@ -137,14 +137,17 @@ queue.clear(); // Cleans up all state, and unsubscribes everything.
                 this.messagesReadyForSending
                         .subscribeOn(Schedulers.io())
                         .observeOn(Schedulers.io())
-                        .subscribe(outgoingSofaMessage ->
-                                BaseApplication
-                                        .get()
-                                        .getTokenManager()
-                                        .getSofaMessageManager()
-                                        .sendAndSaveMessage(this.remoteUser, outgoingSofaMessage)
-                        );
+                        .subscribe(this::sendAndSaveMessage);
+
         this.subscriptions.add(subscription);
+    }
+
+    private void sendAndSaveMessage(final SofaMessage outgoingSofaMessage) {
+        BaseApplication
+                .get()
+                .getTokenManager()
+                .getSofaMessageManager()
+                .sendAndSaveMessage(this.remoteUser, outgoingSofaMessage);
     }
 
     private void processPreInitMessagesQueue() {

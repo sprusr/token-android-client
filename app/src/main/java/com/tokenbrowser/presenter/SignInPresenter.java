@@ -18,16 +18,20 @@
 package com.tokenbrowser.presenter;
 
 import android.content.Intent;
+import android.support.annotation.StringRes;
 import android.view.View;
 import android.widget.Toast;
 
 import com.tokenbrowser.R;
 import com.tokenbrowser.crypto.HDWallet;
+import com.tokenbrowser.manager.TokenManager;
+import com.tokenbrowser.util.LogUtil;
 import com.tokenbrowser.util.SharedPrefsUtil;
 import com.tokenbrowser.view.BaseApplication;
 import com.tokenbrowser.view.activity.MainActivity;
 import com.tokenbrowser.view.activity.SignInActivity;
 
+import rx.Single;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
@@ -85,42 +89,26 @@ public class SignInPresenter implements Presenter<SignInActivity> {
         this.onGoingTask = true;
         this.activity.getBinding().loadingSpinner.setVisibility(View.VISIBLE);
 
-        final Subscription sub = new HDWallet().createFromMasterSeed(masterSeed)
-                .flatMap(wallet -> BaseApplication
-                        .get()
-                        .getTokenManager()
-                        .init(wallet))
+        final Subscription sub =
+                new HDWallet()
+                .createFromMasterSeed(masterSeed)
+                .flatMap(this::initWallet)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnSuccess(__ -> SharedPrefsUtil.setHasBackedUpPhrase())
                 .subscribe(
                         __ -> handleSuccess(),
-                        __ -> handleError()
+                        __ -> handleWalletError(R.string.unable_to_restore_wallet)
                 );
 
         this.subscriptions.add(sub);
     }
 
-    private void handleSuccess() {
-        this.onGoingTask = false;
-        goToMainActivity();
-    }
-
-    private void handleError() {
-        this.onGoingTask = false;
-        this.activity.getBinding().loadingSpinner.setVisibility(View.GONE);
-        Toast.makeText(
-                this.activity,
-                this.activity.getString(R.string.unable_to_restore_wallet),
-                Toast.LENGTH_SHORT)
-                .show();
-    }
-
-    private void goToMainActivity() {
-        SharedPrefsUtil.setSignedIn();
-        final Intent intent = new Intent(this.activity, MainActivity.class);
-        this.activity.startActivity(intent);
-        this.activity.finish();
+    private Single<TokenManager> initWallet(final HDWallet wallet) {
+        return BaseApplication
+                .get()
+                .getTokenManager()
+                .init(wallet);
     }
 
     private void handleCreateNewAccountClicked() {
@@ -135,9 +123,41 @@ public class SignInPresenter implements Presenter<SignInActivity> {
                 .init()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(unused -> handleSuccess());
+                .subscribe(
+                        __ -> handleSuccess(),
+                        throwable -> {
+                            LogUtil.exception(getClass(), "Error while creating new wallet", throwable);
+                            handleWalletError(R.string.unable_to_create_wallet);
+                        }
+                );
 
         this.subscriptions.add(sub);
+    }
+
+    private void handleSuccess() {
+        this.onGoingTask = false;
+        goToMainActivity();
+    }
+
+    private void goToMainActivity() {
+        SharedPrefsUtil.setSignedIn();
+        final Intent intent = new Intent(this.activity, MainActivity.class);
+        this.activity.startActivity(intent);
+        this.activity.finish();
+    }
+
+    private void handleWalletError(final @StringRes int stringId) {
+        showToast(stringId);
+        this.onGoingTask = false;
+        this.activity.getBinding().loadingSpinner.setVisibility(View.GONE);
+    }
+
+    private void showToast(final @StringRes int stringId) {
+        Toast.makeText(
+                this.activity,
+                this.activity.getString(stringId),
+                Toast.LENGTH_SHORT
+        ).show();
     }
 
     @Override

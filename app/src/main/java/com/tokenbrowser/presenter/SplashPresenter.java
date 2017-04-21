@@ -20,7 +20,7 @@ package com.tokenbrowser.presenter;
 import android.app.PendingIntent;
 import android.content.Intent;
 
-import com.crashlytics.android.Crashlytics;
+import com.tokenbrowser.util.LogUtil;
 import com.tokenbrowser.util.SharedPrefsUtil;
 import com.tokenbrowser.view.BaseApplication;
 import com.tokenbrowser.view.activity.MainActivity;
@@ -46,6 +46,7 @@ public class SplashPresenter implements Presenter<SplashActivity> {
             this.firstTimeAttaching = false;
             initLongLivingObjects();
         }
+
         redirect();
     }
 
@@ -64,15 +65,23 @@ public class SplashPresenter implements Presenter<SplashActivity> {
     }
 
     private void initManagersAndGoToAnotherActivity() {
-        final Subscription sub = BaseApplication
+        final Subscription sub =
+                BaseApplication
                 .get()
                 .getTokenManager()
                 .init()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(tokenManager -> goToAnotherActivity());
+                .subscribe(
+                        __ -> goToAnotherActivity(),
+                        this::handleError
+                );
 
         this.subscriptions.add(sub);
+    }
+
+    private void handleError(final Throwable throwable) {
+        LogUtil.exception(getClass(), "Error while initiating managers", throwable);
     }
 
     private void goToAnotherActivity() {
@@ -83,7 +92,7 @@ public class SplashPresenter implements Presenter<SplashActivity> {
             try {
                 nextIntent.send();
             } catch (final PendingIntent.CanceledException ex) {
-                Crashlytics.logException(ex);
+                LogUtil.exception(getClass(), ex);
             }
             this.activity.finish();
         } else {

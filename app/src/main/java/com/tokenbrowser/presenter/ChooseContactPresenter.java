@@ -26,8 +26,10 @@ import android.support.v7.widget.RecyclerView;
 import com.jakewharton.rxbinding.widget.RxTextView;
 import com.tokenbrowser.R;
 import com.tokenbrowser.crypto.util.TypeConverter;
+import com.tokenbrowser.model.local.Contact;
 import com.tokenbrowser.model.local.User;
 import com.tokenbrowser.util.EthUtil;
+import com.tokenbrowser.util.LogUtil;
 import com.tokenbrowser.util.PaymentType;
 import com.tokenbrowser.view.BaseApplication;
 import com.tokenbrowser.view.activity.ChatActivity;
@@ -87,20 +89,29 @@ public class ChooseContactPresenter implements Presenter<ChooseContactsActivity>
     private void generateLocalAmount() {
         final BigInteger weiAmount = TypeConverter.StringHexToBigInteger(this.encodedEthAmount);
         final BigDecimal ethAmount = EthUtil.weiToEth(weiAmount);
-        this.subscriptions.add(
+
+        final Subscription sub =
                 BaseApplication
                 .get()
                 .getTokenManager()
                 .getBalanceManager()
                 .convertEthToLocalCurrencyString(ethAmount)
-                .subscribe(this::setLocalCurrency)
-        );
+                .subscribe(
+                        this::setLocalCurrency,
+                        this::handleLocalCurrencyError
+                );
+
+        this.subscriptions.add(sub);
     }
 
     private void setLocalCurrency(final String localCurrency) {
         this.localCurrency = localCurrency;
         initToolbar();
         setSendButtonText();
+    }
+
+    private void handleLocalCurrencyError(final Throwable throwable) {
+        LogUtil.exception(getClass(), "Error during converting eth to local currency", throwable);
     }
 
     private void initView() {
@@ -120,12 +131,21 @@ public class ChooseContactPresenter implements Presenter<ChooseContactsActivity>
                 .getUserManager()
                 .loadAllContacts()
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(contacts -> {
-                    this.adapter.mapContactsToUsers(contacts);
-                    updateEmptyState();
-                });
+                .subscribe(
+                        this::handleContacts,
+                        this::handleContactsError
+                );
 
         this.subscriptions.add(sub);
+    }
+
+    private void handleContacts(final List<Contact> contacts) {
+        this.adapter.mapContactsToUsers(contacts);
+        updateEmptyState();
+    }
+
+    private void handleContactsError(final Throwable throwable) {
+        LogUtil.exception(getClass(), "Error when fetching contacts", throwable);
     }
 
     private void initToolbar() {
@@ -177,19 +197,29 @@ public class ChooseContactPresenter implements Presenter<ChooseContactsActivity>
     }
 
     private void initSearch() {
-        final Subscription sub = RxTextView
+        final Subscription sub =
+                RxTextView
                 .textChanges(this.activity.getBinding().recipientUser)
                 .skip(1)
                 .debounce(400, TimeUnit.MILLISECONDS)
                 .map(CharSequence::toString)
                 .flatMap(this::searchOfflineUsers)
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(users -> {
-                    this.adapter.setUsers(users);
-                    updateEmptyState();
-                });
+                .subscribe(
+                        this::handleUserSearch,
+                        this::handleUserSearchError
+                );
 
         this.subscriptions.add(sub);
+    }
+
+    private void handleUserSearch(final List<User> users) {
+        this.adapter.setUsers(users);
+        updateEmptyState();
+    }
+
+    private void handleUserSearchError(final Throwable throwable) {
+        LogUtil.exception(getClass(), "Error while searching for offline users", throwable);
     }
 
     private void initClickListeners() {

@@ -133,7 +133,7 @@ public class ViewAppPresenter implements Presenter<ViewAppActivity> {
     }
 
     private void handleAppLoadingFailed(final Throwable throwable) {
-        LogUtil.e(getClass(), "Error during fetching of app " + throwable.getMessage());
+        LogUtil.exception(getClass(), "Error during fetching of app", throwable);
         if (this.activity == null) return;
         this.activity.finish();
         Toast.makeText(this.activity, R.string.error__app_loading, Toast.LENGTH_LONG).show();
@@ -168,7 +168,7 @@ public class ViewAppPresenter implements Presenter<ViewAppActivity> {
     }
 
     private void handleReputationError(final Throwable throwable) {
-        LogUtil.e(getClass(), "Error during reputation fetching " + throwable.getMessage());
+        LogUtil.exception(getClass(), "Error during reputation fetching", throwable);
     }
 
     private void initViewWithAppData() {
@@ -205,7 +205,13 @@ public class ViewAppPresenter implements Presenter<ViewAppActivity> {
     private final OnSingleClickListener toggleFavorite = new OnSingleClickListener() {
         @Override
         public void onSingleClick(final View v) {
-            final Subscription sub = isFavorited().subscribe(this::toggleFavorite);
+            final Subscription sub =
+                    isFavorited()
+                    .subscribe(
+                            this::toggleFavorite,
+                            throwable -> handleFavoredError(throwable)
+                    );
+
             subscriptions.add(sub);
         }
 
@@ -273,7 +279,13 @@ public class ViewAppPresenter implements Presenter<ViewAppActivity> {
     }
 
     private void updateFavoriteButtonState() {
-        final Subscription sub = isFavorited().subscribe(this::updateFavoriteButtonState);
+        final Subscription sub =
+                isFavorited()
+                .subscribe(
+                        this::updateFavoriteButtonState,
+                        this::handleFavoredError
+                );
+
         this.subscriptions.add(sub);
     }
 
@@ -290,6 +302,10 @@ public class ViewAppPresenter implements Presenter<ViewAppActivity> {
                 ? ContextCompat.getColor(this.activity, R.color.colorPrimary)
                 : ContextCompat.getColor(this.activity, R.color.profile_icon_text_color);
         favoriteButton.setTextColor(color);
+    }
+
+    private void handleFavoredError(final Throwable throwable) {
+        LogUtil.exception(getClass(), "Error while checking if app is favored", throwable);
     }
 
     @Override

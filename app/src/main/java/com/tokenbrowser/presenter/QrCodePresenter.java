@@ -19,7 +19,6 @@ package com.tokenbrowser.presenter;
 
 import android.graphics.Bitmap;
 
-import com.crashlytics.android.Crashlytics;
 import com.tokenbrowser.model.local.User;
 import com.tokenbrowser.util.LogUtil;
 import com.tokenbrowser.util.QrCode;
@@ -84,7 +83,7 @@ public class QrCodePresenter implements Presenter<QrCodeActivity> {
     }
 
     private void handleUserError(final Throwable throwable) {
-        LogUtil.e(getClass(), throwable.toString());
+        LogUtil.exception(getClass(), "Error while fetching user", throwable);
     }
 
     private void showQrCode(final User user) {
@@ -108,8 +107,7 @@ public class QrCodePresenter implements Presenter<QrCodeActivity> {
     }
 
     private void handleQrCodeError(final Throwable throwable) {
-        LogUtil.e(getClass(), throwable.toString());
-        Crashlytics.logException(throwable);
+        LogUtil.exception(getClass(), "Error while generating qr code", throwable);
     }
 
     @Override

@@ -125,14 +125,30 @@ public class EditProfilePresenter implements Presenter<EditProfileActivity> {
     }
 
     private void attachListeners() {
-        this.subscriptions.add(BaseApplication.get()
+        final Subscription sub =
+                BaseApplication
+                .get()
                 .getTokenManager()
                 .getUserManager()
                 .getUserObservable()
                 .filter(user -> user != null)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::handleUserLoaded));
+                .subscribe(
+                        this::handleUserLoaded,
+                        this::handleUserLoadedError
+                );
+
+        this.subscriptions.add(sub);
+    }
+
+    private void handleUserLoaded(final User user) {
+        setFieldsFromUser(user);
+        updateView();
+    }
+
+    private void handleUserLoadedError(final Throwable throwable) {
+        LogUtil.exception(getClass(), "Error while fetching loaded user", throwable);
     }
 
     private final OnSingleClickListener handleSaveClicked = new OnSingleClickListener() {
@@ -223,7 +239,7 @@ public class EditProfilePresenter implements Presenter<EditProfileActivity> {
                 photoFile = new FileUtil().createImageFileWithRandomName(this.activity);
                 this.capturedImagePath = photoFile.getAbsolutePath();
             } catch (IOException e) {
-                LogUtil.e(getClass(), "Error during creating image file " + e.getMessage());
+                LogUtil.exception(getClass(), "Error during creating image file", e);
             }
             if (photoFile != null) {
                 final Uri photoURI = FileProvider.getUriForFile(
@@ -275,11 +291,6 @@ public class EditProfilePresenter implements Presenter<EditProfileActivity> {
         }
     }
 
-    private void handleUserLoaded(final User user) {
-        setFieldsFromUser(user);
-        updateView();
-    }
-
     private void setFieldsFromUser(final User user) {
         if (this.displayNameFieldContents == null) this.displayNameFieldContents = user.getDisplayName();
         if (this.userNameFieldContents == null) this.userNameFieldContents = user.getUsernameForEditing();
@@ -293,8 +304,8 @@ public class EditProfilePresenter implements Presenter<EditProfileActivity> {
         this.activity.onBackPressed();
     }
 
-    private void handleUserUpdateFailed(final Throwable error) {
-        LogUtil.e(getClass(), error.toString());
+    private void handleUserUpdateFailed(final Throwable throwable) {
+        LogUtil.exception(getClass(), "Error while updating user", throwable);
         showToast("Error updating profile. Try a different username");
     }
 
@@ -319,7 +330,7 @@ public class EditProfilePresenter implements Presenter<EditProfileActivity> {
             try {
                 handleGalleryImage(resultHolder);
             } catch (IOException e) {
-                LogUtil.e(getClass(), "Error during uploading gallery image");
+                LogUtil.exception(getClass(), "Error during uploading gallery image", e);
                 showFailureMessage();
                 return false;
             }

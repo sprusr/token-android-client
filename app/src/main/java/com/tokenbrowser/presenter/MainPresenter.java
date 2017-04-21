@@ -28,6 +28,7 @@ import com.aurelhubert.ahbottomnavigation.AHBottomNavigation;
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigationAdapter;
 import com.tokenbrowser.R;
 import com.tokenbrowser.manager.SofaMessageManager;
+import com.tokenbrowser.util.LogUtil;
 import com.tokenbrowser.util.SharedPrefsUtil;
 import com.tokenbrowser.util.SoundManager;
 import com.tokenbrowser.view.BaseApplication;
@@ -107,15 +108,27 @@ public class MainPresenter implements Presenter<MainActivity> {
                 messageManager.registerForAllConversationChanges()
                 .flatMap((unused) -> messageManager.areUnreadMessages().toObservable())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::handleUnreadMessages);
+                .subscribe(
+                        this::handleUnreadMessages,
+                        this::handleUnreadMessagesError
+                );
 
         final Subscription firstTimeSubscription =
-                messageManager.areUnreadMessages().toObservable()
+                messageManager
+                .areUnreadMessages()
+                .toObservable()
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::handleUnreadMessages);
+                .subscribe(
+                        this::handleUnreadMessages,
+                        this::handleUnreadMessagesError
+                );
 
         this.subscriptions.add(allChangesSubscription);
         this.subscriptions.add(firstTimeSubscription);
+    }
+
+    private void handleUnreadMessagesError(final Throwable throwable) {
+        LogUtil.exception(getClass(), "Error while fetching unread messages", throwable);
     }
 
     private void handleUnreadMessages(final boolean areUnreadMessages) {

@@ -26,6 +26,7 @@ import com.tokenbrowser.R;
 import com.tokenbrowser.crypto.util.TypeConverter;
 import com.tokenbrowser.util.EthUtil;
 import com.tokenbrowser.util.LocaleUtil;
+import com.tokenbrowser.util.LogUtil;
 import com.tokenbrowser.util.PaymentType;
 import com.tokenbrowser.view.BaseApplication;
 import com.tokenbrowser.view.activity.AmountActivity;
@@ -188,14 +189,23 @@ public class AmountPresenter implements Presenter<AmountActivity> {
                 .getTokenManager()
                 .getBalanceManager()
                 .convertLocalCurrencyToEth(localValue)
-                .subscribe((ethAmount) -> {
-                    this.activity.getBinding().ethValue.setText(EthUtil.ethAmountToUserVisibleString(ethAmount));
-                    this.activity.getBinding().btnContinue.setEnabled(ethAmount.compareTo(BigDecimal.ZERO) != 0);
-
-                    final BigInteger weiAmount = EthUtil.ethToWei(ethAmount);
-                    this.encodedEthAmount = TypeConverter.toJsonHex(weiAmount);
-                })
+                .subscribe(
+                        this::handleEth,
+                        this::handleEthError
+                )
         );
+    }
+
+    private void handleEth(final BigDecimal ethAmount) {
+        this.activity.getBinding().ethValue.setText(EthUtil.ethAmountToUserVisibleString(ethAmount));
+        this.activity.getBinding().btnContinue.setEnabled(ethAmount.compareTo(BigDecimal.ZERO) != 0);
+
+        final BigInteger weiAmount = EthUtil.ethToWei(ethAmount);
+        this.encodedEthAmount = TypeConverter.toJsonHex(weiAmount);
+    }
+
+    private void handleEthError(final Throwable throwable) {
+        LogUtil.exception(getClass(), "Error while converting local currency to eth", throwable);
     }
 
     @NonNull

@@ -25,6 +25,7 @@ import android.view.View;
 
 import com.tokenbrowser.R;
 import com.tokenbrowser.model.local.PendingTransaction;
+import com.tokenbrowser.util.LogUtil;
 import com.tokenbrowser.view.BaseApplication;
 import com.tokenbrowser.view.activity.TransactionOverviewActivity;
 import com.tokenbrowser.view.adapter.TransactionsAdapter;
@@ -93,13 +94,20 @@ public class TransactionOverviewPresenter implements Presenter<TransactionOvervi
                 .getAllTransactions()
                 .doOnSubscribe(() -> this.adapter.clear())
                 .doOnCompleted(this::updateEmptyState)
-                .subscribe(this::handleTransactionLoaded);
+                .subscribe(
+                        this::handleTransactionLoaded,
+                        this::handleTransactionError
+                );
 
         this.subscriptions.add(sub);
     }
 
     private void handleTransactionLoaded(final PendingTransaction transaction) {
         this.adapter.addTransaction(transaction);
+    }
+
+    private void handleTransactionError(final Throwable throwable) {
+        LogUtil.exception(getClass(), "Error while fetching all transactions", throwable);
     }
 
     private void updateEmptyState() {

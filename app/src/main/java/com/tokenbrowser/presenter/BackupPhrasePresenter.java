@@ -31,14 +31,15 @@ import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.Toast;
 
+import com.beloo.widget.chipslayoutmanager.ChipsLayoutManager;
 import com.tokenbrowser.R;
 import com.tokenbrowser.crypto.HDWallet;
+import com.tokenbrowser.util.LogUtil;
 import com.tokenbrowser.view.BaseApplication;
 import com.tokenbrowser.view.activity.BackupPhraseActivity;
 import com.tokenbrowser.view.activity.BackupPhraseVerifyActivity;
 import com.tokenbrowser.view.adapter.BackupPhraseAdapter;
 import com.tokenbrowser.view.custom.SpaceDecoration;
-import com.beloo.widget.chipslayoutmanager.ChipsLayoutManager;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -92,12 +93,16 @@ public class BackupPhrasePresenter implements Presenter<BackupPhraseActivity> {
     }
 
     private void addBackupPhrase() {
-        final Subscription sub = BaseApplication.get()
+        final Subscription sub =
+                BaseApplication.get()
                 .getTokenManager()
                 .getWallet()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::handleBackupPhraseCallback);
+                .subscribe(
+                        this::handleBackupPhraseCallback,
+                        this::handleBackupPhraseError
+                );
 
         this.subscriptions.add(sub);
     }
@@ -107,6 +112,10 @@ public class BackupPhrasePresenter implements Presenter<BackupPhraseActivity> {
         final String[] backupPhraseList = this.backupPhrase.split(" ");
         final BackupPhraseAdapter adapter = (BackupPhraseAdapter) activity.getBinding().backupPhraseList.getAdapter();
         adapter.setBackupPhraseItems(Arrays.asList(backupPhraseList));
+    }
+
+    private void handleBackupPhraseError(final Throwable throwable) {
+        LogUtil.exception(getClass(), "Error while getting wallet", throwable);
     }
 
     private void initClickListeners() {

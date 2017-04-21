@@ -22,6 +22,7 @@ import android.support.v4.app.ActivityCompat;
 import android.view.View;
 
 import com.tokenbrowser.crypto.HDWallet;
+import com.tokenbrowser.util.LogUtil;
 import com.tokenbrowser.util.SharedPrefsUtil;
 import com.tokenbrowser.view.BaseApplication;
 import com.tokenbrowser.view.activity.BackupPhraseVerifyActivity;
@@ -58,12 +59,16 @@ public class BackupPhraseVerifyPresenter implements Presenter<BackupPhraseVerify
     }
 
     private void addBackupPhrase() {
-        final Subscription sub = BaseApplication.get()
+        final Subscription sub =
+                BaseApplication.get()
                 .getTokenManager()
                 .getWallet()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::handleBackupPhraseCallback);
+                .subscribe(
+                        this::handleBackupPhraseCallback,
+                        this::handleBackupPhraseError
+                );
 
         this.subscriptions.add(sub);
     }
@@ -71,6 +76,10 @@ public class BackupPhraseVerifyPresenter implements Presenter<BackupPhraseVerify
     private void handleBackupPhraseCallback(final HDWallet wallet) {
         final String[] backupPhrase = wallet.getMasterSeed().split(" ");
         this.activity.getBinding().dragAndDropView.setBackupPhrase(Arrays.asList(backupPhrase));
+    }
+
+    private void handleBackupPhraseError(final Throwable throwable) {
+        LogUtil.exception(getClass(), "Error while getting wallet", throwable);
     }
 
     private void initListeners() {

@@ -258,7 +258,7 @@ public final class ScannerPresenter implements
     }
 
     private void handleLoginFailure(final Throwable throwable) {
-        LogUtil.e(getClass(), throwable.toString());
+        LogUtil.exception(getClass(), "Login failure", throwable);
         Toast.makeText(BaseApplication.get(), R.string.error__web_signin, Toast.LENGTH_LONG).show();
     }
 

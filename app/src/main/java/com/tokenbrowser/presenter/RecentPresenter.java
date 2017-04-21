@@ -26,6 +26,7 @@ import android.view.MenuItem;
 
 import com.tokenbrowser.model.local.Conversation;
 import com.tokenbrowser.R;
+import com.tokenbrowser.util.LogUtil;
 import com.tokenbrowser.view.BaseApplication;
 import com.tokenbrowser.view.activity.ChatActivity;
 import com.tokenbrowser.view.activity.ScannerActivity;
@@ -34,6 +35,8 @@ import com.tokenbrowser.view.adapter.RecentAdapter;
 import com.tokenbrowser.view.adapter.listeners.OnItemClickListener;
 import com.tokenbrowser.view.custom.HorizontalLineDivider;
 import com.tokenbrowser.view.fragment.toplevel.RecentFragment;
+
+import java.util.List;
 
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
@@ -94,26 +97,39 @@ public final class RecentPresenter implements
                 .getSofaMessageManager()
                 .loadAllConversations()
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe((conversations) -> {
-                    this.adapter.setConversations(conversations);
-                    updateEmptyState();
-                });
+                .subscribe(
+                        this::handleConversations,
+                        this::handleConversationsError
+                );
+
         this.subscriptions.add(sub);
+    }
+
+    private void handleConversations(final List<Conversation> conversations) {
+        this.adapter.setConversations(conversations);
+        updateEmptyState();
+    }
+
+    private void handleConversationsError(final Throwable throwable) {
+        LogUtil.exception(getClass(), "Error fetching conversations", throwable);
     }
 
     private void attachSubscriber() {
         final Subscription sub =
                 BaseApplication
-                        .get()
-                        .getTokenManager()
-                        .getSofaMessageManager()
-                        .registerForAllConversationChanges()
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe((updatedConversation) -> {
-                            this.adapter.updateConversation(updatedConversation);
-                            updateEmptyState();
-                        });
+                .get()
+                .getTokenManager()
+                .getSofaMessageManager()
+                .registerForAllConversationChanges()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::handleConversation);
+
         this.subscriptions.add(sub);
+    }
+
+    private void handleConversation(final Conversation updatedConversation) {
+        this.adapter.updateConversation(updatedConversation);
+        updateEmptyState();
     }
 
     private void updateEmptyState() {

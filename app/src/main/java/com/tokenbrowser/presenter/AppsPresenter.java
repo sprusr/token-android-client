@@ -126,7 +126,7 @@ public class AppsPresenter implements Presenter<AppsFragment>{
     }
 
     private void handleSearchErrorResponse(final Throwable throwable) {
-        LogUtil.e(getClass(), throwable.getMessage());
+        LogUtil.exception(getClass(), "Error while searching for app", throwable);
     }
 
     private void updateViewState() {
@@ -163,7 +163,7 @@ public class AppsPresenter implements Presenter<AppsFragment>{
     }
 
     private void handleRecommendedAppsErrorResponse(final Throwable throwable) {
-        LogUtil.e(getClass(), throwable.getMessage());
+        LogUtil.exception(getClass(), "Error while fetching recommended apps", throwable);
     }
 
     private void addAppsData(final List<App> apps) {
