@@ -18,8 +18,8 @@
 package com.tokenbrowser.manager.network.interceptor;
 
 
-import com.crashlytics.android.Crashlytics;
 import com.tokenbrowser.BuildConfig;
+import com.tokenbrowser.util.LogUtil;
 
 import java.io.IOException;
 import java.net.SocketTimeoutException;
@@ -45,7 +45,7 @@ public class UserAgentInterceptor implements Interceptor {
                     .build();
             return chain.proceed(request);
         } catch (final SocketTimeoutException ex) {
-            Crashlytics.logException(ex);
+            LogUtil.exception(getClass(), "Error while intercepting request", ex);
             return null;
         }
     }

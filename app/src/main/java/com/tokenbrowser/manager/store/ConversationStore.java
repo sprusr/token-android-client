@@ -23,6 +23,7 @@ import android.util.Pair;
 import com.tokenbrowser.model.local.Conversation;
 import com.tokenbrowser.model.local.SofaMessage;
 import com.tokenbrowser.model.local.User;
+import com.tokenbrowser.util.LogUtil;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -83,7 +84,8 @@ public class ConversationStore {
         .subscribe(conversationForBroadcast -> {
             broadcastNewChatMessage(user.getTokenId(), message);
             broadcastConversationChanged(conversationForBroadcast);
-        });
+        },
+        this::handleError);
     }
 
     private int calculateNumberOfUnread(final Conversation conversationToStore) {
@@ -115,7 +117,10 @@ public class ConversationStore {
         })
         .observeOn(Schedulers.immediate())
         .subscribeOn(Schedulers.from(dbThread))
-        .subscribe(this::broadcastConversationChanged);
+        .subscribe(
+                this::broadcastConversationChanged,
+                this::handleError
+        );
     }
 
     public List<Conversation> loadAll() {
@@ -158,7 +163,10 @@ public class ConversationStore {
         })
         .observeOn(Schedulers.immediate())
         .subscribeOn(Schedulers.from(dbThread))
-        .subscribe(unused -> broadcastUpdatedChatMessage(user.getTokenId(), message));
+        .subscribe(
+                __ -> broadcastUpdatedChatMessage(user.getTokenId(), message),
+                this::handleError
+        );
     }
 
     public boolean areUnreadMessages() {
@@ -184,5 +192,9 @@ public class ConversationStore {
             return;
         }
         updatedMessageObservable.onNext(updatedMessage);
+    }
+
+    private void handleError(final Throwable throwable) {
+        LogUtil.exception(getClass(), throwable);
     }
 }

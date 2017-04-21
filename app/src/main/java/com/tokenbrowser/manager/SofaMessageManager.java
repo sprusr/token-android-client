@@ -303,7 +303,7 @@ public final class SofaMessageManager {
 
                     @Override
                     public void onError(final Throwable throwable) {
-                        LogUtil.e(getClass(), "Error during key registration: " + throwable);
+                        LogUtil.exception(getClass(), "Error during key registration", throwable);
                     }
                 });
     }
@@ -352,7 +352,7 @@ public final class SofaMessageManager {
     }
 
     private void handleMessageError(final Throwable throwable) {
-        LogUtil.e(getClass(), "Message sending/receiving now broken due to this error: " + throwable);
+        LogUtil.exception(getClass(), "Message sending/receiving now broken due to this error", throwable);
     }
 
     private void sendPendingMessages() {
@@ -482,7 +482,7 @@ public final class SofaMessageManager {
         } catch (final TimeoutException ex) {
             throw new TimeoutException(ex.getMessage());
         } catch (final IllegalStateException | InvalidKeyException | InvalidKeyIdException | DuplicateMessageException | InvalidVersionException | LegacyMessageException | InvalidMessageException | NoSessionException | org.whispersystems.libsignal.UntrustedIdentityException | IOException e) {
-            LogUtil.e(getClass(), "receiveMessage: " + e.toString());
+            LogUtil.exception(getClass(), "Error while fetching latest message", e);
         }
         return null;
     }
@@ -537,7 +537,10 @@ public final class SofaMessageManager {
         .getTokenManager()
         .getUserManager()
         .getUserFromAddress(signalMessage.getSource())
-        .subscribe((user) -> this.saveIncomingMessageFromUserToDatabase(user, signalMessage));
+        .subscribe(
+                (user) -> this.saveIncomingMessageFromUserToDatabase(user, signalMessage),
+                this::handleUserError
+        );
     }
 
     private void processAttachments(final DecryptedSignalMessage signalMessage) {
@@ -573,7 +576,8 @@ public final class SofaMessageManager {
                     .subscribe((updatedPayload) -> {
                         remoteMessage.setPayload(updatedPayload);
                         this.conversationStore.saveNewMessage(user, remoteMessage);
-                    });
+                    },
+                    this::handleError);
             return;
         } else if (remoteMessage.getType() == SofaType.INIT_REQUEST) {
             // Don't render initRequests,
@@ -583,6 +587,10 @@ public final class SofaMessageManager {
         }
 
         this.conversationStore.saveNewMessage(user, remoteMessage);
+    }
+
+    private void handleError(final Throwable throwable) {
+        LogUtil.exception(getClass(), "Error while generating payload with local amount embedded", throwable);
     }
 
     private void respondToInitRequest(final User sender, final SofaMessage remoteMessage) {
@@ -597,7 +605,7 @@ public final class SofaMessageManager {
                     .getSofaMessageManager()
                     .sendMessage(sender, newSofaMessage);
         } catch (final IOException e) {
-            LogUtil.e(getClass(), "Failed to respond to incoming init request " + e);
+            LogUtil.exception(getClass(), "Failed to respond to incoming init request", e);
         }
     }
 
@@ -616,7 +624,7 @@ public final class SofaMessageManager {
                     .generateLocalPrice()
                     .map((updatedPaymentRequest) -> adapters.toJson(updatedPaymentRequest));
         } catch (final IOException ex) {
-            LogUtil.e(getClass(), "Unable to embed local price");
+            LogUtil.exception(getClass(), "Unable to embed local price", ex);
         }
 
         return Single.just(remoteMessage.getPayloadWithHeaders());
@@ -637,7 +645,7 @@ public final class SofaMessageManager {
     }
 
     private void handleOnboardingBotError(final Throwable throwable) {
-        LogUtil.e(getClass(), "Onboarding bot not found. " + throwable.toString());
+        LogUtil.exception(getClass(), "Onboarding bot not found", throwable);
     }
 
     private void handleOnboardingBotFound(final UserSearchResults results) {
@@ -656,9 +664,16 @@ public final class SofaMessageManager {
             .getTokenManager()
             .getUserManager()
             .getCurrentUser()
-             .map(this::generateOnboardingMessage)
-             .doOnSuccess(__ -> SharedPrefsUtil.setHasOnboarded())
-             .subscribe(onboardingMessage -> this.sendOnboardingMessage(onboardingMessage, onboardingBot));
+            .map(this::generateOnboardingMessage)
+            .doOnSuccess(__ -> SharedPrefsUtil.setHasOnboarded())
+            .subscribe(
+                    onboardingMessage -> this.sendOnboardingMessage(onboardingMessage, onboardingBot),
+                    this::handleUserError
+            );
+    }
+
+    private void handleUserError(final Throwable throwable) {
+        LogUtil.exception(getClass(), "Error while fetching current user", throwable);
     }
 
     private void sendOnboardingMessage(final SofaMessage onboardingMessage, final User onboardingBot) {

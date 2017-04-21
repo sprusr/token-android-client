@@ -70,7 +70,7 @@ public class HDWallet {
         try {
             MnemonicCode.INSTANCE = new MnemonicCode(BaseApplication.get().getResources().openRawResource(R.raw.bip39_wordlist), null);
         } catch (final IOException e) {
-            LogUtil.e(getClass(), "Wordlist not loaded.");
+            LogUtil.exception(getClass(), "Wordlist not loaded", e);
             throw new RuntimeException(e);
         }
     }

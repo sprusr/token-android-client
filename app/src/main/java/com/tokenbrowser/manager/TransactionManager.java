@@ -95,10 +95,15 @@ public class TransactionManager {
             .setFromAddress(this.wallet.getPaymentAddress())
             .setToAddress(paymentAddress)
             .generateLocalPrice()
-            .subscribe((payment -> {
-                final PaymentTask task = new PaymentTask(receiver, payment, OUTGOING);
-                this.newPaymentQueue.onNext(task);
-            }));
+            .subscribe(
+                    payment -> handleLocalPrice(payment, receiver),
+                    this::handleLocalPriceError
+            );
+    }
+
+    private void handleLocalPrice(final Payment payment, final User receiver) {
+        final PaymentTask task = new PaymentTask(receiver, payment, OUTGOING);
+        this.newPaymentQueue.onNext(task);
     }
 
     public final void updatePayment(final Payment payment) {
@@ -126,7 +131,7 @@ public class TransactionManager {
             }
 
         } catch (final IOException ex) {
-            LogUtil.e(getClass(), "Error changing Payment Request state. " + ex);
+            LogUtil.exception(getClass(), "Error changing Payment Request state", ex);
         }
     }
 
@@ -192,7 +197,8 @@ public class TransactionManager {
 
 
     private void attachNewPaymentSubscriber() {
-        final Subscription sub = this.newPaymentQueue
+        final Subscription sub =
+            this.newPaymentQueue
             .observeOn(Schedulers.io())
             .subscribeOn(Schedulers.io())
             .filter(paymentTask -> paymentTask.getUser() != null)
@@ -207,7 +213,14 @@ public class TransactionManager {
                 .getTokenManager()
                 .getUserManager()
                 .getUserFromPaymentAddress(payment.getFromAddress())
-                .subscribe((sender) -> createNewPayment(sender, payment));
+                .subscribe(
+                        (sender) -> createNewPayment(sender, payment),
+                        this::handleUserError
+                );
+    }
+
+    private void handlePaymentError(final Throwable throwable) {
+        LogUtil.exception(getClass(), "Error while creating new payment", throwable);
     }
 
     private void createNewPayment(final User sender, final Payment payment) {
@@ -218,30 +231,42 @@ public class TransactionManager {
         this.newPaymentQueue.onNext(task);
     }
 
+    private void handleUserError(final Throwable throwable) {
+        LogUtil.exception(getClass(), "Error while fetching user from payment address", throwable);
+    }
+
     private void processNewPayment(final PaymentTask task) {
         final Payment payment = task.getPayment();
-        final User user = task.getUser();
 
         payment
-        .generateLocalPrice()
-        .observeOn(Schedulers.io())
-        .subscribe((updatedPayment) -> {
-            switch (task.getAction()) {
-                case INCOMING: {
-                    final User sender = task.getUser();
-                    final SofaMessage storedSofaMessage = storePayment(sender, updatedPayment, sender);
-                    handleIncomingPayment(updatedPayment, storedSofaMessage);
-                    break;
-                }
-                case OUTGOING: {
-                    final User receiver = task.getUser();
-                    final User sender = getCurrentLocalUser();
-                    final SofaMessage storedSofaMessage = storePayment(receiver, updatedPayment, sender);
-                    handleOutgoingPayment(user, updatedPayment, storedSofaMessage);
-                    break;
-                }
+            .generateLocalPrice()
+            .observeOn(Schedulers.io())
+            .subscribe(
+                    (updatedPayment) -> handleLocalPrice(updatedPayment, task),
+                    this::handleLocalPriceError
+            );
+    }
+
+    private void handleLocalPrice(final Payment updatedPayment, final PaymentTask task) {
+        switch (task.getAction()) {
+            case INCOMING: {
+                final User sender = task.getUser();
+                final SofaMessage storedSofaMessage = storePayment(sender, updatedPayment, sender);
+                handleIncomingPayment(updatedPayment, storedSofaMessage);
+                break;
             }
-        });
+            case OUTGOING: {
+                final User receiver = task.getUser();
+                final User sender = getCurrentLocalUser();
+                final SofaMessage storedSofaMessage = storePayment(receiver, updatedPayment, sender);
+                handleOutgoingPayment(receiver, updatedPayment, storedSofaMessage);
+                break;
+            }
+        }
+    }
+
+    private void handleLocalPriceError(final Throwable throwable) {
+        LogUtil.exception(getClass(), "Error while generating local price", throwable);
     }
 
     private SofaMessage storePayment(final User receiver, final Payment payment, final User sender) {
@@ -265,7 +290,7 @@ public class TransactionManager {
                 .subscribe(new OnNextSubscriber<SentTransaction>() {
                     @Override
                     public void onError(final Throwable error) {
-                        LogUtil.e(getClass(), "Error creating transaction: " + error);
+                        LogUtil.exception(getClass(), "Error creating transaction", error);
                         updateMessageState(receiver, storedSofaMessage, SendState.STATE_FAILED);
                         showPaymentFailedNotification(receiver);
                         unsubscribe();
@@ -374,7 +399,10 @@ public class TransactionManager {
                 .map(pendingTransaction -> updatePendingTransaction(pendingTransaction, payment))
                 .filter(isExistingTransaction -> !isExistingTransaction)
                 // This transaction has never been seen before; create and broadcast it.
-                .subscribe(__ -> createNewPayment(payment));
+                .subscribe(
+                        __ -> createNewPayment(payment),
+                        this::handlePaymentError
+                );
     }
 
     private void storeMessage(final User receiver, final SofaMessage message) {
@@ -404,7 +432,7 @@ public class TransactionManager {
         try {
             updatedMessage = updateStatusFromPendingTransaction(pendingTransaction, updatedPayment);
         } catch (final IOException | UnknownTransactionException ex) {
-            LogUtil.e(getClass(), "Unable to update pending transaction. " + ex.getMessage());
+            LogUtil.exception(getClass(), "Unable to update pending transaction", ex);
             return false;
         }
 
