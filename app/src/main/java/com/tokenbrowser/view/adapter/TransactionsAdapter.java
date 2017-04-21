@@ -64,7 +64,7 @@ public class TransactionsAdapter extends RecyclerView.Adapter<TransactionViewHol
             final Payment payment = this.adapters.paymentFrom(sofaMessage);
             holder.setPayment(payment);
         } catch (final IOException ex) {
-            LogUtil.exception(getClass(), ex);
+            LogUtil.exception(getClass(), "Error while getting payment from sofa message", ex);
         }
     }
 

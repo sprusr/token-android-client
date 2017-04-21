@@ -109,7 +109,7 @@ public class BalanceBar extends LinearLayout {
     }
 
     private void handleBalanceError(final Throwable throwable) {
-        LogUtil.exception(getClass(), throwable);
+        LogUtil.exception(getClass(), "Error while getting balance", throwable);
     }
 
     private void setEthBalanceFromBigInteger(final BigInteger weiBalance) {

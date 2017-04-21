@@ -104,12 +104,12 @@ public class GcmMessageReceiver extends GcmListenerService {
             }
 
         } catch (final Exception ex) {
-            LogUtil.e(getClass(), "Error -> " + ex);
+            LogUtil.exception(getClass(), ex);
         }
     }
 
     private void handleIncomingMessageError(final Throwable throwable) {
-        LogUtil.e(getClass(), "Error during incoming message " + throwable.toString());
+        LogUtil.exception(getClass(), "Error during incoming message", throwable);
     }
 
     private void handlePayment(final Payment payment) {
@@ -138,7 +138,7 @@ public class GcmMessageReceiver extends GcmListenerService {
     }
 
     private void handleInvalidPayment(final Throwable throwable) {
-        LogUtil.e(getClass(), "Invalid payment " + throwable.toString());
+        LogUtil.exception(getClass(), "Invalid payment", throwable);
     }
 
     private void tryShowSignalMessage() {
@@ -185,7 +185,10 @@ public class GcmMessageReceiver extends GcmListenerService {
                 .get()
                 .getTokenManager()
                 .getWallet()
-                .subscribe((w) -> showOnlyIncomingPaymentNotification(w, payment));
+                .subscribe(
+                        (wallet) -> showOnlyIncomingPaymentNotification(wallet, payment),
+                        this::handleError
+                );
     }
 
     private void showOnlyIncomingPaymentNotification(final HDWallet wallet, final Payment payment) {
@@ -200,19 +203,36 @@ public class GcmMessageReceiver extends GcmListenerService {
     private void renderNotificationForPayment(final Payment payment) {
         final BigInteger weiAmount = TypeConverter.StringHexToBigInteger(payment.getValue());
         final BigDecimal ethAmount = EthUtil.weiToEth(weiAmount);
+
         BaseApplication
                 .get()
                 .getTokenManager()
                 .getBalanceManager()
                 .convertEthToLocalCurrencyString(ethAmount)
-                .subscribe((localCurrency) -> {
-                    final String content = String.format(Locale.getDefault(), this.getString(R.string.latest_message__payment_incoming), localCurrency);
-                    BaseApplication
-                            .get()
-                            .getTokenManager()
-                            .getUserManager()
-                            .getUserFromPaymentAddress(payment.getFromAddress())
-                            .subscribe((sender) -> ChatNotificationManager.showChatNotification(sender, content));
-                });
+                .subscribe(
+                        (localCurrency) -> handleLocalCurrency(payment, localCurrency),
+                        this::handleError
+                );
+    }
+
+    private void handleLocalCurrency(final Payment payment, final String localCurrency) {
+        final String content = String.format(Locale.getDefault(), this.getString(R.string.latest_message__payment_incoming), localCurrency);
+        getUserFromPaymentAddress(payment, content);
+    }
+
+    private void getUserFromPaymentAddress(final Payment payment, final String content) {
+        BaseApplication
+                .get()
+                .getTokenManager()
+                .getUserManager()
+                .getUserFromPaymentAddress(payment.getFromAddress())
+                .subscribe(
+                        (sender) -> ChatNotificationManager.showChatNotification(sender, content),
+                        this::handleError
+                );
+    }
+
+    private void handleError(final Throwable throwable) {
+        LogUtil.exception(getClass(), throwable);
     }
 }
