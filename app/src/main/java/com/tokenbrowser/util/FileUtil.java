@@ -80,8 +80,7 @@ public class FileUtil {
             final File destFile = new File(BaseApplication.get().getFilesDir(), fileName);
             return writeToFileFromInputStream(destFile, stream);
         } catch (IOException | InvalidMessageException e) {
-            Crashlytics.logException(e);
-            LogUtil.e(getClass(), "Error during writing attachment to file " + e.getMessage());
+            LogUtil.exception(getClass(), "Error during writing attachment to file", e);
             return null;
         } finally {
             if (file != null) {

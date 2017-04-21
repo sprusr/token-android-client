@@ -32,7 +32,6 @@ import android.widget.ImageView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.request.target.Target;
-import com.crashlytics.android.Crashlytics;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.EncodeHintType;
 import com.google.zxing.WriterException;
@@ -69,7 +68,7 @@ public class ImageUtil {
             .doOnSubscribe(() -> renderFromCache(url, imageView))
             .subscribe(
                     result -> renderFileIntoTarget(result, imageView),
-                    Crashlytics::logException
+                    throwable -> LogUtil.exception(ImageUtil.class, throwable)
             );
 
     }

@@ -30,6 +30,6 @@ public abstract class OnNextSubscriber<T> extends Subscriber<T> {
 
     @Override
     public void onError(final Throwable e) {
-        LogUtil.e(getClass(), "Unhandled onError " + e);
+        LogUtil.exception(getClass(), "Unhandled onError ", e);
     }
 }

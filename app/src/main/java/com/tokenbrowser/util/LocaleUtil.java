@@ -37,7 +37,7 @@ public class LocaleUtil {
                 return BaseApplication.get().getResources().getConfiguration().locale;
             }
         } catch (final NullPointerException ex) {
-            LogUtil.e(LocaleUtil.class, "NPE when getting locale. " + ex);
+            LogUtil.exception(LocaleUtil.class, "NPE when getting locale", ex);
             // Default to something!
             return Locale.ENGLISH;
         }
